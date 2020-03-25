@@ -81,8 +81,10 @@ export class TaskTerminalWidgetManager {
     protected init(): void {
         this.taskWatcher.onTaskExit((event: TaskExitedEvent) => {
             const finishedTaskId = event.taskId;
+            console.log('+++++++++++++onTaskExit');
             // find the terminal where the task ran, and mark it as "idle"
             for (const terminal of this.getTaskTerminalWidgets()) {
+                console.log('++++++++++++++onTaskExit taskId: ', terminal.taskId, ' terminalId: ', terminal.terminalId, ' finishedTaskId: ', finishedTaskId);
                 if (terminal.taskId === finishedTaskId) {
                     this.notifyTaskFinished(terminal);
                     break;
@@ -95,10 +97,12 @@ export class TaskTerminalWidgetManager {
             if (terminal) {
                 const didConnectListener = terminal.onDidOpen(async () => {
                     didConnectListener.dispose(); // intermediate reconnections should not affect busy state
+                    console.log('+++++++++++++terminal.onDidOpen');
                     const context = this.workspaceService.workspace && this.workspaceService.workspace.uri;
                     const tasksInfo = await this.taskServer.getTasks(context);
                     const taskInfo = tasksInfo.find(info => info.terminalId === widget.terminalId);
                     if (taskInfo) {
+                        console.log('++++++++++++++onDidOpen TaskInfo taskId: ', taskInfo.taskId, ' terminalId: ', terminal.terminalId);
                         const taskConfig = taskInfo.config;
                         terminal.dedicated = !!taskConfig.presentation && !!taskConfig.presentation.panel && taskConfig.presentation.panel === PanelKind.Dedicated;
                         terminal.taskId = taskInfo.taskId;
@@ -108,8 +112,13 @@ export class TaskTerminalWidgetManager {
                 });
                 const didConnectFailureListener = terminal.onDidOpenFailure(async () => {
                     didConnectFailureListener.dispose(); // intermediate reconnections should not affect busy state
+                    console.log('+++++++++++++terminal.onDidOpenFailure');
                     this.notifyTaskFinished(terminal);
                 });
+                // terminal.onDidDispose(() => {
+                //     didConnectListener.dispose();
+                //     didConnectFailureListener.dispose();
+                // });
             }
         });
     }
